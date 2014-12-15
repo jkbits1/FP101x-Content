@@ -358,3 +358,31 @@ testStrLn s = appendStrLn s " - test"
 -- reportResult :: String -> IO ()
 -- reportResult s = do
   -- putStrLn ("You entered: " ++ s)
+
+ 
+-- good clear info https://www.fpcomplete.com/school/advanced-haskell/the-mother-of-all-monads
+
+-- http://www.codejury.com/continuations-in-haskell/
+  
+-- fork implementation here:  https://en.wikibooks.org/wiki/Haskell/Continuation_passing_style#Example:_coroutines
+  
+-- file handling code: http://sysmagazine.com/posts/149174/
+
+-- detailed explanation :
+-- http://stackoverflow.com/questions/9050725/call-cc-implementation
+
+-- detailed explanation :
+--  http://stackoverflow.com/questions/3322540/how-and-why-does-the-haskell-cont-monad-work
+
+-- https://www.haskell.org/haskellwiki/MonadCont_under_the_hood
+
+-- diagram: 
+-- https://www.haskell.org/pipermail/beginners/2013-March/011610.html
+
+-- http://blog.sigfpe.com/2008/12/mother-of-all-monads.html
+
+-- https://www.fpcomplete.com/user/jwiegley/understanding-continuations
+
+-- http://stackoverflow.com/questions/3322540/how-and-why-does-the-haskell-cont-monad-work
+
+-- http://www.vex.net/~trebla/haskell/cont-monad.xhtml
