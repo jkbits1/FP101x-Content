@@ -117,6 +117,7 @@ sqc2 = square_cps 4
 thrice :: (a -> a) -> a -> a
 thrice f x = f (f (f x))
 
+-- call as - thrice_cps addOne_cps 1 print (first param is a cps fn)
 thrice_cps :: (a -> ((a -> r) -> r)) -> a -> ((a -> r) -> r)
 thrice_cps f_cps x = \k -> f_cps x $ \fx -> f_cps fx $ \ffx -> f_cps ffx $ k
 
@@ -137,7 +138,7 @@ cont :: ((a -> r) -> r) -> Cont r a
 -- this is an unwrapper and runner
 runCont :: Cont r a -> ((a -> r) -> r)
 
--- from Cont.hs
+-- from Cont.hs (Control.Monad.Cont)
 -- | Construct a continuation-passing computation from a function.
 -- (The inverse of 'runCont'.)
 -- cont :: ((a -> r) -> r) -> Cont r a
@@ -152,10 +153,12 @@ cont f = ContT (\ k -> Identity (f (runIdentity . k)))
     -- -> r
 runCont m k = runIdentity (runContT m (Identity . k))
 
--- from Cont.hs
+-- from Cont.hs (Control.Monad.Cont)
 -- instance Monad (ContT r m) where
     -- return a = ContT ($ a)
     -- m >>= k  = ContT $ \c -> runContT m (\a -> runContT (k a) c)
+    
+-- from  https://en.wikibooks.org/wiki/Haskell/Continuation_passing_style#cite_ref-1
 -- instance Monad (Cont r) where
   -- return x = Main.cont ($ x)
   -- s >>= f = Main.cont $ \c -> Main.runCont s $ \x -> Main.runCont (f x) c
@@ -191,19 +194,33 @@ pyth_cont x y = do
 add_what :: Int -> Int -> Cont r Int
 add_what x y = return $ x + y
 
+mult_what :: Int -> Int -> Cont r Int
+mult_what x y = return $ x * y
+
 
 -- ex1 :: IO ()
--- -- ex1 = print $ Main.runCont (f >>= g) id
--- ex1 = print $ Control.Monad.Trans.Cont.runCont (f >>= g) id
-  -- where
-    -- -- f = add_cont 1 2
-    -- f = add_what 1 2
-    -- -- g = add_cont 1 2
-    -- g = add_what 1 2
+-- ex1 = print $ Main.runCont (f >>= g) id
+ex1what x y z = print $ Control.Monad.Cont.runCont (f >>= g) id
+  where
+    f = add_cont x y -- both *_cont or *_what fns work
+    g = mult_what z -- takes its second param from f
 
+-- same as ex1what (used for call below)    
+ex2what x y z = print $ Control.Monad.Cont.runCont (f >>= g) id
+  where
+    f = add_cont x y -- both *_cont or *_what fns work
+    g = mult_what z -- takes its second param from f
+
+bothWhats = do
+    ex1what 2 3 4
+    ex2what 1 2 3
+    
+    
 -- ex2 :: IO ()
 -- ex2 = print $ Control.Monad.Trans.Cont.runCont Control.Monad.Cont.callCC show
 -- -- "3"
+
+
 
 -- from https://hackage.haskell.org/package/mtl-2.0.1.0/docs/Control-Monad-Cont.html
 calcLen :: [a] -> Cont r Int
@@ -272,6 +289,17 @@ testPyth3 x y = Control.Monad.Cont.runCont (getPyth3 x y) show
 -- call as - testPyth3a 3 9 print (or show, etc)
 testPyth3a x y k = Control.Monad.Cont.runCont (getPyth3 x y) k
 
+-- equiv of above calls, in a single item (don't know if better or not,
+--                              but is the same, following notes below)
+-- call as - testPyth4 3 9 print (or show, etc)
+testPyth4 x y k = Control.Monad.Cont.runCont 
+    (do      
+        x_squ <- square_cont x 
+        y_squ <- square_cont y 
+        add_cont x_squ y_squ) 
+    k
+
+
 
 
 -- ex1 :: IO ()
@@ -284,6 +312,20 @@ testPyth3a x y k = Control.Monad.Cont.runCont (getPyth3 x y) k
             -- f = add_what 1 2
             -- -- g = add_cont 1 2
             -- g = add_what 1 2
+    
+-- from https://sites.google.com/site/haskell/notes/alittletrick    
+-- (flip runCont) id $ do
+  -- ...
+
+-- Here we see another arguably better solution:
+-- (`runCont` id) $ do 
+   -- ...
+
+-- which translates to
+-- (do ...) `runCont` id
+
+-- and then
+-- runCont (do ...) id    
     
     
 
@@ -298,3 +340,21 @@ appendStrLn s a = putStrLn (s ++ a)
 
 testStrLn s = appendStrLn s " - test"
 
+-- from  https://hackage.haskell.org/package/mtl-2.0.1.0/docs/Control-Monad-Cont.html#g:6
+
+-- import Control.Monad.Cont
+-- import System.IO
+
+-- main = do
+  -- hSetBuffering stdout NoBuffering
+  -- runContT (callCC askString) reportResult
+
+-- askString :: (String -> ContT () IO String) -> ContT () IO String
+-- askString next = do
+  -- liftIO $ putStrLn "Please enter a string"
+  -- s <- liftIO $ getLine
+  -- next s
+
+-- reportResult :: String -> IO ()
+-- reportResult s = do
+  -- putStrLn ("You entered: " ++ s)
